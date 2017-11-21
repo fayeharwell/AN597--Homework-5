@@ -1,0 +1,52 @@
+---
+title: 'AN597- Homework #5'
+author: "Faye Harwell"
+date: "November 15, 2017"
+output: html_document
+---
+
+```{r}
+library(curl)
+library(ggplot2)
+f <- curl("https://raw.githubusercontent.com/fuzzyatelin/fuzzyatelin.github.io/master/AN597_Fall17/KamilarAndCooperData.csv")
+d <- read.csv(f, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+head(d)
+```
+
+#### Question Numero Uno: Using the “KamilarAndCooperData.csv” dataset, run a linear regression looking at log(HomeRange_km2) in relation to log(Body_mass_female_mean) and report your β coeffiecients (slope and intercept).
+
+```{r}
+m <- lm(data = d, log(d$Body_mass_female_mean) ~ log(d$HomeRange_km2))
+summary(m)
+confint(m)
+```
+
+```{r}
+Plot <- ggplot(data = d, aes(x = log(HomeRange_km2), y = log(Body_mass_female_mean)))
+Plot <- Plot + geom_point()
+Plot <- Plot + geom_smooth(method = "lm", formula = y ~ x, colour= "black")
+Plot <- Plot + annotate("text", label= "Y= 0.50638X + 8.48616", x= -5, y=10, color= "black" )
+Plot
+```
+
+#### Question Numero Dos: Then, use bootstrapping to sample from your data 1000 times with replacement, each time fitting the same model and calculating the same coefficients. This generates a sampling distribution for each ββ coefficient.
+
+```{r}
+N=1000
+
+BootStrappin <- function(dat= d, mod.formula= formula(log(Body_mass_female_mean) ~ log(HomeRange_km2))){
+  data.boot<- dat[sample(x=nrow(dat), size= nrow(dat), replace= TRUE),]
+  boot.lm<- lm(data=data.boot, mod.formula)
+  coef(boot.lm)}
+
+
+vector.bootie<- t(replicate(N,BootStrappin()))
+
+vector.bootie
+
+apply(vector.bootie, MARGIN= 2, sd)
+
+t(apply(vector.bootie, MARGIN= 2, quantile, probs=c(0.025,0.975)))
+```
+
+#### The standard error for the intercept is slightly lower for the data that included bootstrapping, while the standard error for the slope remained approximately the same between the linear model and the bootstrapped data. Also, the confidence intervals did not change significantly using the boostrapping method. 
